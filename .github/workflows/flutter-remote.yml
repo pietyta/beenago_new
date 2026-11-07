@@ -51,6 +51,9 @@ on:
       tunnel_protocol:
         description: "Cloudflare tunnel protocol: 'quic' (recommended, UDP-based, better on lossy networks) or 'http2'"
         default: quic
+      serve_sim_token:
+        description: "Token for serve-sim authentication (generated if empty)"
+        default: ""
       max_dimension:
         description: Longest side of the picture sent to the browser, in pixels (0 = full size)
         default: "960"
@@ -190,6 +193,8 @@ jobs:
       - name: Start serve-sim
         id: serve_sim
         timeout-minutes: 10
+        env:
+          SERVE_SIM_AUTH_TOKEN: ${{ inputs.serve_sim_token || inputs.gate_token }}
         run: |
           set -euo pipefail
 
@@ -205,10 +210,8 @@ jobs:
             --panes none
             --port "$PREVIEW_PORT"
             --codec "$CODEC"
+            --auth-token "$SERVE_SIM_AUTH_TOKEN"
           )
-
-          echo "Starting serve-sim with codec=$CODEC args: ${ARGS[*]}"
-          SERVE_SIM_OUT=$(npx --yes serve-sim "${ARGS[@]}" "${{ steps.sim.outputs.udid }}" || true)
           echo "serve-sim raw output: $SERVE_SIM_OUT"
 
           for i in {1..30}; do
